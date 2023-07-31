@@ -1,85 +1,67 @@
-const fs = require('fs')
-const process = require('process')
-const axios = require('axios')
+const fs = require('fs').promises;
+const process = require('process');
+const axios = require('axios');
 
-
-const read = (arg) => {
-    fs.readFile(arg, 'utf8', function(err, data) {
+function read(outPath, path, callback) {
+    console.log(path);
+    fs.readFile(path, 'utf8', function(err, data) {
         if (err) {
             console.log(`Error reading ${path}: \n \t${err}`);
             process.exit(1);
+        } else {
+            console.log(data)
+            callback(outPath, data); // Pass data to the callback function
         }
-
-        return data;
-    }
-    );
+    });
 }
 
-const output = (path, data) => {
-    fs.writeFile(path, data, 'utf8', function(err, data) {
+const output = (outPath, data) => {
+    console.log(data)
+    fs.writeFile(outPath, data, 'utf8', function(err) {
         if (err) {
-            console.log(`Error reading ${path}: \n \t${err}`);
+            console.log(`Error writing ${outPath}: \n \t${err}`);
             process.exit(1);
+        } else {
+            console.log('Data written successfully.');
         }
-
-        console.log('Sucess');
-    })
-}
-
+    });
+};
 
 async function fetch(URL) {
-    try{
-    let res = await axios.get(URL)
-    return res.data;
+    try {
+        let res = await axios.get(URL);
+        return res.data;
+    } catch (err) {
+        console.log(`Error fetching ${URL}: \n \t${err}`);
+        process.exit(1);
     }
-    catch(err) {
-            console.log(`Error fetching ${URL}: \n \t${err}`);
-            process.exit(1);
-        }
-};
-
+}
 
 function isHTTP(arg) {
-if (arg.slice(0,4) === 'http') {
-    return true
-    }
-else {
-    return false
-    }
-}
-
-
-const cat = (arg) => {
-    let link = isHTTP(arg);
-    if(link) {
-        let data = fetch(link)
-        console.log(data)
-    }
-    else {
-        let data = read(link)
-        console.log(data)
+    if (arg.slice(0, 4) === 'http') {
+        return true;
+    } else {
+        return false;
     }
 }
 
-
-// cat(process.argv[2]);
-
-
-
-
-function catWrite(comd, path,file) {
-    if (comd == '--out') {
-    let link = isHTTP(arg)
-    if (link) {
-        let data = fetch(file)
-        output(path, data)
-
-        }
-    else {
-        let data = read(link)
-        output(path, data)
+async function catWrite(comd, outPath, path) {
+    if (comd === '--out') {
+        if (isHTTP(path)) {
+            try {
+                let data = await fetch(path);
+                output(outPath, data);
+            } catch (err) {
+                console.log(`Error fetching ${path}: \n \t${err}`);
+                process.exit(1);
+            }
+        } else {
+            // Using a callback to handle the asynchronous result of read function
+            read(outPath, path, function(data) {
+                output(outPath, data);
+            });
         }
     }
-};
+}
 
-catWrite(process.argv[0], process.argv[1], process.argv[2])
+catWrite(process.argv[2], process.argv[3], process.argv[4]);

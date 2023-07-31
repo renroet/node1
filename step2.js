@@ -16,8 +16,6 @@ const cat = (path) => {
 
 
 
-
-
 async function webCat(URL) {
     try{
     let res = await axios.get(URL)
@@ -40,4 +38,6 @@ else {
 }
 
 callCat(process.argv[2]);
+
+
 
